@@ -43,8 +43,9 @@ io.on('connection', (socket) => {
                 avatar_url: data.author.avatar_url || DEFAULT_USER_AVATAR,
             },
             content: breakString(data.content, 250),
-            mentions: getMentions(data.content),
         };
+
+        data.mentions = getMentions(data.content);
 
         if (data.content.length > 250) data.content = data.content.slice(0, 250);
 
