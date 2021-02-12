@@ -29,7 +29,7 @@ io.on('connection', (socket) => {
         data = {
             author: {
                 name: data.author.name,
-                avatar_url: data.author.avatar_url || 'https://i.imgur.com/HXv93eV.jpg', // default user avatar
+                avatar_url: data.author.avatar_url || DEFAULT_USER_AVATAR,
             },
             content: breakString(data.content, 250),
             mentions: getMentions(data.content),
@@ -70,3 +70,5 @@ io.on('disconnect', (socket) => {
 });
 
 server.listen(process.env.PORT || 3000, () => console.log('Running!'));
+
+var DEFAULT_USER_AVATAR = 'https://i.imgur.com/HXv93eV.jpg';
