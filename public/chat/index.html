@@ -30,104 +30,81 @@
     </div>
 
     <script type="text/javascript" defer>
-        // const address = "http://localhost:3000";
+        // const address = 'http://localhost:3000';
         const address = 'https://nium-chat.herokuapp.com';
         const socket = io(address);
 
-        const mentionRegExp = new RegExp(/\@([a-zA-Z0-9]+)/gm)
-
-        const squares = document.getElementsByClassName('square');
-
-        function getCookie(name) {
+        for (square of document.getElementsByClassName('square')) {
+            square.addEventListener('click', (square) => {
+                const root = document.querySelector(':root');
+                square = window.getComputedStyle(square.target);
+            
+                root.style.setProperty('--border', square.getPropertyValue('border-color'));
+                root.style.setProperty('--background', square.getPropertyValue('background-color'));
+            });
+        }
+        
+        const getCookie = (name) => {
             const nameEQ = `${name}=`;
-            const ca = document.cookie.split(';');
-            for (let i = 0; i < ca.length; i++) {
-                let c = ca[i];
-                while (c.charAt(0) == ' ') c = c.substring(1, c.length);
-                if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
+            const cookieArray = document.cookie.split(';');
+            
+            for (let i = 0; i < cookieArray.length; i++) {
+                let cookie = cookieArray[i];
+                
+                while (cookie.chatAt(0) == ' ') cookie = cookie.substring(1, cookie.length);
+                
+                if (cookie.indexOf(nameEQ) == 0) return cookie.substring(nameEQ.length, cookie.length);
             }
+            
             return null;
-        }
-
-        function getName() {
-            return getCookie('chatUsername') || socket.id;
-        }
-
-        for (square of squares) square.addEventListener('click', onSquareClicked);
-
-        function onSquareClicked(square) {
-            let r = document.querySelector(':root');
-            square = window.getComputedStyle(square.target);
-
-            r.style.setProperty('--border', square.getPropertyValue('border-color'));
-            r.style.setProperty('--background', square.getPropertyValue('background-color'));
-        }
-
-        function updateScroll() {
-            $('.messages').animate({ scrollTop: $('.messages').prop('scrollHeight') }, 500);
-        }
-
-        function addMessageRendered(html) {
-            $('.messages').append(html);
-        }
-
-        function renderUsername(name) {
+        };
+        const getName = () => getCookie('chatUsername') || socket.id;
+        const updateScroll = () => $('.messages').animate({ scrollTop: $('.messages').prop('scrollHeight') }, 500);
+        const addMessageRendered = (html) => $('.messages').append(html);
+        const renderUsername = (name) => {
             const today = new Date();
             const minutes = today.getMinutes();
 
             name = `${name} at ${today.getHours()}:${minutes <= 9? '0' + minutes : minutes}`;
-            return "<h5 class='username'>" + name + "</h5>";
-        }
-
-        function renderMessageContent(string) {
-            string = string.replace(mentionRegExp, (item) => {
-                console.log(item);
-                return `<span class='mention'>${item}</span>`
-            })
-            return `<p>${string}</p>`
-        }
-
-        function renderMessage(message) {
-            addMessageRendered(
-                "<div class='message'><img class='user-image' src='" + message.author.avatar_url + "'><div class='content'>" + 
-                renderUsername(message.author.name) + 
-                renderMessageContent(message.content) + "</div></div>"
-            );
-
-            updateScroll();
-        }
-        
-        function playAudioNotification(path) {
-            return new Audio(`./${path}.ogg`).play();
-        }
-
-        socket.on("messageNotSended", (m) => {});
-
-        socket.on("receivedMessage", (m) => {
-            renderMessage(m);
-            console.log(m.mentions);
-
-            if (m.mentions.includes(`@${getName()}`)) return playAudioNotification('mention');
+            return `<h5 class='username'>${name}</h5>`;
+        };
+        const renderMessageContent = (string) => `<p>${string.replace(new RegExp(/\@([a-zA-Z0-9]+)/gm), (item) => `<span class='mention'>${item}</span>`)}</p>`;
+        const renderMessage = (message) => {
+            addMessageRendered([
+                '<div class="message">',
+                    `<img class="user-image" src="${message.author.avatar_url}">`,
+                    `<div cladd="content">${renderUsername(message.author.name)}${renderMessageContent(message.content)}</div>`,
+                '</div>'
+            ].join(''));
             
-            return playAudioNotification('message');
-        })
+            return updateScroll();
+        }
+        const playAudioNotification = (path) => new Audio(`./${path}.ogg`).play();
 
-        socket.on("messageSended", (m) => {
-            document.getElementById("message").value = '';
-            renderMessage(m);
-        })
+        socket
+            .on('messageNotSended', () => {})
+            .on('receivedMessage', (message) => {
+                renderMessage(message);
+                console.log(message.mentions);
+            
+                return playAudioNotification(message.mentions.includes(`@${getName()}`) ? 'mention' : 'message');
+            })
+            .on('messageSended', (message) => {
+                document.getElementById('message').value = '';
+                renderMessage(message);
+            });
 
-        $("#chat").submit((event) => {
+        $('#chat').submit((event) => {
             event.preventDefault();
-            const message = $("input[name=message]").val();
+            const message = $('input[name=message]').val();
 
             if (message.length) {
-                if (message === "/clear") return $(".messages").html("");
+                if (message === '/clear') return $('.messages').html('');
 
-                return socket.emit("sendMessage", {
+                return socket.emit('sendMessage', {
                     author: {
                         name: getName(),
-                        avatar_url: getCookie("chatAvatarUrl")
+                        avatar_url: getCookie('chatAvatarUrl')
                     },
                     content: message
                 });
